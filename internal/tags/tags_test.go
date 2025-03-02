@@ -26,6 +26,18 @@ func TestParseTag(t *testing.T) {
 			wantErr: nil,
 		},
 		{
+			name: "Normal/single tag with empty name",
+			args: `name:",test"`,
+			want: Tags{
+				{
+					Key:     "name",
+					Name:    "",
+					Options: Options{Option{Name: "test"}},
+				},
+			},
+			wantErr: nil,
+		},
+		{
 			name: "Normal/single tag with backslash comma",
 			args: `na\,me:"test"`,
 			want: Tags{
@@ -44,7 +56,22 @@ func TestParseTag(t *testing.T) {
 				{
 					Key:     "name",
 					Name:    "test",
-					Options: []string{"opt1", "opt2"},
+					Options: Options{Option{Name: "opt1"}, Option{Name: "opt2"}},
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Normal/single tag with double options (use option with value)",
+			args: `name:"test,opt1=abc,opt2=abc\,"`,
+			want: Tags{
+				{
+					Key:  "name",
+					Name: "test",
+					Options: Options{
+						Option{Name: "opt1", Value: "abc"},
+						Option{Name: "opt2", Value: "abc,"},
+					},
 				},
 			},
 			wantErr: nil,
@@ -56,7 +83,7 @@ func TestParseTag(t *testing.T) {
 				{
 					Key:     "name",
 					Name:    "test",
-					Options: []string{"opt1:ab", "opt2"},
+					Options: Options{Option{Name: "opt1:ab"}, Option{Name: "opt2"}},
 				},
 			},
 			wantErr: nil,
@@ -68,7 +95,7 @@ func TestParseTag(t *testing.T) {
 				{
 					Key:     "name",
 					Name:    "test",
-					Options: []string{"opt1$%ab", "opt2*s"},
+					Options: Options{Option{Name: "opt1$%ab"}, Option{Name: "opt2*s"}},
 				},
 			},
 			wantErr: nil,
@@ -85,7 +112,7 @@ func TestParseTag(t *testing.T) {
 				{
 					Key:     "json",
 					Name:    "test",
-					Options: []string{"omitempty"},
+					Options: Options{Option{Name: "omitempty"}},
 				},
 			},
 			wantErr: nil,
@@ -97,12 +124,12 @@ func TestParseTag(t *testing.T) {
 				{
 					Key:     "name",
 					Name:    "test",
-					Options: []string{"omitempty", "debug"},
+					Options: Options{Option{Name: "omitempty"}, Option{Name: "debug"}},
 				},
 				{
 					Key:     "json",
 					Name:    "test",
-					Options: []string{"omitempty"},
+					Options: Options{Option{Name: "omitempty"}},
 				},
 			},
 			wantErr: nil,

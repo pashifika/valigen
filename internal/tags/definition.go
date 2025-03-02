@@ -5,6 +5,7 @@ const (
 	_colon = ':'
 	_space = ' '
 	_quote = '"'
+	_equal = '='
 	_bs    = 0x5C
 
 	_stepKey  = -2

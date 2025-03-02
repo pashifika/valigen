@@ -21,7 +21,7 @@ type Tag struct {
 
 	// Options is a part of the value. It contains a slice of tag options
 	// i.e: `json:"foo,omitempty"`. Here options is: ["omitempty"]
-	Options []string
+	Options Options
 }
 
 // Get retrieves a tag from the Tags slice with the specified key.
@@ -44,7 +44,10 @@ func ParseTag(s string) (Tags, error) {
 	scan.Init(strings.NewReader(s))
 	step := _stepKey
 	tag := Tag{}
-	var prevRune rune
+	var (
+		prevRune rune
+		optValue bool
+	)
 	for {
 		r := scan.Next()
 		switch r {
@@ -56,7 +59,11 @@ func ParseTag(s string) (Tags, error) {
 		case _colon:
 			if step > _stepName {
 				// case: `name:"test,opt1:ab"`
-				tag.Options[step] += string(r)
+				if optValue {
+					tag.Options[step].Value += string(r)
+				} else {
+					tag.Options[step].Name += string(r)
+				}
 				break
 			}
 			if tag.Key == "" {
@@ -73,7 +80,8 @@ func ParseTag(s string) (Tags, error) {
 				return nil, ErrTagSyntax
 			}
 			if scan.Peek() != _quote {
-				tag.Options = append(tag.Options, "")
+				tag.Options = append(tag.Options, Option{})
+				optValue = false // is next option, initialize optValue
 				step++
 			}
 		case _quote:
@@ -85,12 +93,14 @@ func ParseTag(s string) (Tags, error) {
 				scan.Next()
 				step = _stepKey // is next key, initialize step
 				result = append(result, tag)
+				optValue = false // is next key, initialize optValue
 				tag = Tag{}
 			default:
 				return nil, ErrTagSyntax
 			}
 		default:
-			if r == _bs && scan.Peek() == _comma {
+			peek := scan.Peek()
+			if r == _bs && peek == _comma {
 				r = scan.Next()
 			}
 			switch step {
@@ -99,7 +109,17 @@ func ParseTag(s string) (Tags, error) {
 			case _stepName:
 				tag.Name += string(r)
 			default:
-				tag.Options[step] += string(r)
+				if optValue {
+					tag.Options[step].Value += string(r)
+				} else {
+					tag.Options[step].Name += string(r)
+				}
+				if peek == _equal {
+					// case: `name:"opt1=abc"`
+					prevRune = scan.Next()
+					optValue = true // set next to option value
+					continue
+				}
 			}
 		}
 		prevRune = r
